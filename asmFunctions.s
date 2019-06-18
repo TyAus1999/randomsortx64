@@ -2,6 +2,141 @@
 .text               #the first six parameters go into rdi, rsi, rdx, rcx, r8, and r9.
     
     .global actualGen
+    .global fib
+    .global prob4
+    .global bubbleSort
+    .global fillArrayWithRandom64
+
+        fillArrayWithRandom64:#rdi is length
+        #returns pointer to array
+            cmp     rdi,0
+            jle     _fillArrayWithRandom64Bad
+
+            push    rbp
+            mov     rbp,rsp
+
+            push    rdi     #-8     length
+            imul    rdi,8
+            call    malloc@PLT
+            push    rax     #-16    pointer
+            pushq   0       #-24    counter
+
+            _fillArrayWithRandom64L1:
+                call    genRandom64
+                mov     rbx,[rbp-16]
+                mov     rcx,[rbp-24]
+                mov     [rbx+rcx*8],rax
+
+                inc     rcx
+                mov     [rbp-24],rcx
+                cmp     rcx,[rbp-8]
+                jl      _fillArrayWithRandom64L1
+
+            mov     rax,[rbp-16]
+            mov     rsp,rbp
+            pop     rbp
+            ret
+            _fillArrayWithRandom64Bad:
+                mov     rax,0
+                ret
+
+        genRandom64:#returns 64
+            call    rand@PLT
+            push    rax
+            call    rand@PLT
+            shl     rax,32
+            pop     rbx
+            or      rax,rbx
+            ret
+
+        bubbleSort:#rdi is pointer rsi is length
+        #returns pointer
+            cmp     rsi,0
+            jle     _bubbleSortBad
+            cmp     rsi,1
+            je      _bubbleSortMeme
+
+            push    rbp
+            mov     rbp,rsp
+
+            #checkArray rdi-pointer,rsi-length
+            xor     rcx,rcx
+            xor     rbx,rbx
+            _bubbleSortL1:
+                mov     rax,[rdi+rcx*8]
+                cmp     rax,rbx
+                #jl      _bubbleSortL1Swap
+                mov     rbx,rax
+
+                inc     rcx
+                cmp     rcx,rsi
+                jl      _bubbleSortL1
+                push    rdi
+                push    rsi
+                call    checkArray
+                cmp     rax,0
+                jne     _bubbleSortSorted
+                xor     rcx,rcx
+                xor     rbx,rbx
+                jmp     _bubbleSortL1
+                _bubbleSortSorted:
+
+            mov     rsp,rbp
+            pop     rbp
+
+            _bubbleSortMeme:
+                mov     rax,rdi
+                ret
+            _bubbleSortBad:
+                mov     rax,0
+                ret
+
+
+
+
+        prob4:#rdi is pointer to array rsi is length
+        #return number that has the largest value
+            cmp     rsi,0
+            jle     _prob4Bad
+            
+            xor     rcx,rcx
+            _prob4L1:
+
+
+            _prob4Bad:
+                mov     rax,0
+                ret
+
+        fib:#rdi is iterations
+            cmp     rdi,1
+            jle     _fibBad
+            xor     rax,rax
+            xor     rbx,rbx
+            xor     rcx,rcx
+            xor     rdx,rdx
+            inc     rbx
+            _fibL1:
+                cmp     rdx,0
+                je      _fibL1ToRbx
+                dec     rdx
+                add     rax,rbx
+                _fibL1Main:
+                inc     rcx
+                cmp     rcx,rdi
+                jne     _fibL1
+                
+            cmp     rax,rbx
+            jg      _fibRax
+            mov     rax,rbx
+            _fibRax:
+                ret
+                _fibL1ToRbx:
+                    add     rbx,rax
+                    inc     rdx
+                    jmp     _fibL1Main
+            _fibBad:
+                mov     rax,0
+                ret
         test:
             mov eax,2
             ret
@@ -128,7 +263,6 @@
                 xor     edx,edx
                 mov     ecx,[rbp-16]
                 div     ecx
-
                 mov     rcx,[rbp-24]    #counter
                 mov     rsi,[rbp-8]     #pointer
                 xor     rax,rax
