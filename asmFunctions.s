@@ -1,12 +1,12 @@
 .intel_syntax noprefix
 .text               #the first six parameters go into rdi, rsi, rdx, rcx, r8, and r9.
-    
+                    #rbx is preserved accross all function calls
     .global actualGen
     .global fib
     .global prob4
     .global bubbleSort
     .global fillArrayWithRandom64
-
+    .global genRandom64
         fillArrayWithRandom64:#rdi is length
         #returns pointer to array
             cmp     rdi,0
@@ -23,9 +23,9 @@
 
             _fillArrayWithRandom64L1:
                 call    genRandom64
-                mov     rbx,[rbp-16]
+                mov     rdx,[rbp-16]
                 mov     rcx,[rbp-24]
-                mov     [rbx+rcx*8],rax
+                mov     [rdx+rcx*8],rax
 
                 inc     rcx
                 mov     [rbp-24],rcx
@@ -45,8 +45,8 @@
             push    rax
             call    rand@PLT
             shl     rax,32
-            pop     rbx
-            or      rax,rbx
+            pop     rdx
+            or      rax,rdx
             ret
 
         bubbleSort:#rdi is pointer rsi is length
