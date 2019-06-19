@@ -7,7 +7,7 @@ extern "C" {//the first six parameters go into rdi, rsi, rdx, rcx, r8, and r9.
     uint64_t actualGen(int n);
     uint64_t fib(uint64_t n);
     uint64_t prob4(uint64_t* array,uint64_t length);
-    uint64_t* bubbleSort(uint64_t*array,uint64_t length);
+    void bubbleSort(uint64_t*array,uint64_t length);
     uint64_t* fillArrayWithRandom64(uint64_t length);
     uint64_t genRandom64(void);
 }
@@ -25,7 +25,7 @@ void randomSort(void){
         passes++;
     }
 }
-int main(){
+void blah(void){
     uint64_t length=131072*1024;
     /*uint64_t* arr=(uint64_t*)malloc(8*length);
     for(uint64_t i=0;i<length;i++){
@@ -34,11 +34,21 @@ int main(){
     }
     free(arr);*/
     uint64_t* arr=fillArrayWithRandom64(length);
+    cout<<"Done"<<endl;
     /*for(uint64_t i=0;i<length;i++){
         cout<<"Array pos " << i << "="<<*(arr+i)<<endl;
     }*/
     char c;
     cin>>c;
+    free(arr);
+}
+int main(){
+    uint64_t l=2;
+    uint64_t* arr=fillArrayWithRandom64(l);
+    bubbleSort(arr,l);
+    for(uint64_t i=0;i<l;i++){
+        cout<<"Value at " << i << "="<<*(arr+i)<<endl;
+    }
     free(arr);
     return 0;
 }

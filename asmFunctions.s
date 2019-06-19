@@ -7,6 +7,25 @@
     .global bubbleSort
     .global fillArrayWithRandom64
     .global genRandom64
+    .global missingNumber
+
+        missingNumber:#rdi is pointer,rsi is length
+        #rbx is preserved
+        cmp     rsi,1
+        jl      _missingNumberBad
+
+        push    rbp
+        mov     rbp,rsp
+
+
+
+        mov     rsp,rbp
+        pop     rbp
+
+        _missingNumberBad:
+            mov     rax,0
+            ret
+
         fillArrayWithRandom64:#rdi is length
         #returns pointer to array
             cmp     rdi,0
@@ -56,34 +75,43 @@
             cmp     rsi,1
             je      _bubbleSortMeme
 
+            push    rbx
             push    rbp
             mov     rbp,rsp
 
-            #checkArray rdi-pointer,rsi-length
+            push    rdi     #-8 pointer
+            push    rsi     #-16 length
+
             xor     rcx,rcx
-            xor     rbx,rbx
             _bubbleSortL1:
-                mov     rax,[rdi+rcx*8]
-                cmp     rax,rbx
-                #jl      _bubbleSortL1Swap
-                mov     rbx,rax
-
+                mov     rdx,[rbp-8]
+                mov     rax,[rdx+rcx*8]
                 inc     rcx
-                cmp     rcx,rsi
-                jl      _bubbleSortL1
-                push    rdi
-                push    rsi
-                call    checkArray
-                cmp     rax,0
-                jne     _bubbleSortSorted
-                xor     rcx,rcx
-                xor     rbx,rbx
+                cmp     rcx,[rbp-16]
+                jge     _bubbleSortL1LengthLimit
+                mov     rbx,[rdx+rcx*8]
+                cmp     rax,rbx
+                jl      _bubbleSortL1Swap
                 jmp     _bubbleSortL1
-                _bubbleSortSorted:
 
-            mov     rsp,rbp
-            pop     rbp
-
+            _bubbleSortEnd:
+                mov     rax,[rbp-8]
+                mov     rsp,rbp
+                pop     rbp
+                pop     rbx
+                ret
+            _bubbleSortL1LengthLimit:
+                call    checkArray64
+                cmp     rax,1
+                je      _bubbleSortEnd
+                xor     rcx,rcx
+                jmp     _bubbleSortL1
+            _bubbleSortL1Swap:
+                mov     [rdx+rcx*8],rax
+                dec     rcx
+                mov     [rdx+rcx*8],rbx
+                inc     rcx
+                jmp     _bubbleSortL1
             _bubbleSortMeme:
                 mov     rax,rdi
                 ret
@@ -111,6 +139,7 @@
             cmp     rdi,1
             jle     _fibBad
             xor     rax,rax
+            push    rbx
             xor     rbx,rbx
             xor     rcx,rcx
             xor     rdx,rdx
@@ -129,6 +158,7 @@
             jg      _fibRax
             mov     rax,rbx
             _fibRax:
+                pop     rbx
                 ret
                 _fibL1ToRbx:
                     add     rbx,rax
@@ -228,6 +258,29 @@
             _checkArrayEnd:
                 mov     rax,0
                 ret
+
+        checkArray64:#rdi is pointer, rsi is length
+            #returns 0 for false and 1 for true
+            cmp     rsi,0
+            je      _checkArrayEnd
+            
+            xor     rcx,rcx
+            mov     rdx,0xffffffffffffffff
+            _checkArray64L1:
+                mov     rax,[rdi+rcx*8]
+                cmp     rax,rdx
+                jg      _checkArray64End
+                mov     rdx,rax
+                inc     rcx
+                cmp     rcx,rsi
+                jl      _checkArray64L1
+
+            mov     rax,1
+            ret
+            _checkArray64End:
+                mov     rax,0
+                ret
+
 
         shiftArrayAround:#rdi is pointer to array, rsi is length
         #returns pointer(rax) and length(rbx)
