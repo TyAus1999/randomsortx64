@@ -20,33 +20,39 @@
             mov     rbp,rsp
             xor     rcx,rcx #counter
             xor     rdx,rdx #current Index of highest
-            push    rcx #-8     highest place
+            pushq   rcx     #-8 index of highest in array
+            mov     rax,[rdi+rdx*8]
             _sortHighestNumberL1:#largest number stored in rdx
-                mov     rax,[rdi+rdx*8]
                 cmp     rax,[rdi+rcx*8]
-                jg      _sortHighestNumberL1Greater
+                jl      _sortHighestNumberGreater
+                _sortHighestNumberMain:
                 inc     rcx
                 cmp     rcx,rsi
-                jge     _sortHighestNumberL1Iterate
-                jmp     _sortHighestNumberL1
-                _sortHighestNumberL1Greater:
-                    mov     rdx,rcx
-                    jmp     _sortHighestNumberL1
-                _sortHighestNumberL1Iterate:
-                    #save largest value
-                    mov     rax,[rdi+rdx*8]
-                    #rax swap with [rbp-8]
-                    push    rdx
-                    mov     rdx,[rbp-8]
-                    mov     rbx,[rdi+rdx*8]
-                    mov     [rdi+rdx*8],rax
-                    pop     rdx
-                    mov     [rdi+rdx*8],rbx
-                    incq    [rbp-8]
+                jl      _sortHighestNumberL1
+                #rdx contains index of largest number in array
+                #rax contains value of largest
+                mov     rcx,[rbp-8]
+                mov     rbx,[rdi+rcx*8]
+                mov     [rdi+rcx*8],rax
+                mov     [rdi+rdx*8],rbx
+                #swapped
+                #rbx contains what was in index rcx
+                inc     rcx
+                cmp     rcx,rsi
+                jge     _sortHighestNumberL1End
+                mov     [rbp-8],rcx
+                #save rcx
+                mov     rdx,rcx
+                mov     rax,[rdi+rdx*8]
 
-                    #save value to replace
-                    #swap values
-                    #set rcx to highest place +1
+
+                jmp     _sortHighestNumberL1
+
+                _sortHighestNumberGreater:
+                    mov     rdx,rcx
+                    mov     rax,[rdi+rdx*8]
+                    jmp     _sortHighestNumberMain
+                _sortHighestNumberL1End:
 
 
             mov     rsp,rbp

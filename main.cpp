@@ -43,7 +43,7 @@ void blah(void){
     cin>>c;
     free(arr);
 }
-void bubbleSort(uint64_t l){
+int64_t bubbleSort(uint64_t l){
     int64_t mallocAndFillStart=getTimeNow();
     uint64_t* arr=fillArrayWithRandom64(l);
     int64_t mallocAndFillTotal=getTimeNow()-mallocAndFillStart;
@@ -64,8 +64,37 @@ void bubbleSort(uint64_t l){
     char c;
     cin>>c;
     free(arr);
+    return deno;
+}
+int64_t singleSort(uint64_t length){
+    int64_t mallocAndFillStart=getTimeNow();
+    uint64_t* arr=fillArrayWithRandom64(length);
+    int64_t mallocAndFillTotal=getTimeNow()-mallocAndFillStart;
+    int64_t sortHNStart=getTimeNow();
+    sortHighestNumber(arr,length);
+    int64_t sortHNTotal=getTimeNow()-sortHNStart;
+    int64_t displayTimeStart=getTimeNow();
+    for(uint64_t i=0;i<length;i++){
+        cout<<"Value at " << i << "\t="<<*(arr+i)<<endl;
+    }
+    int64_t displayTimeTotal=getTimeNow()-displayTimeStart;
+    int64_t deno=(mallocAndFillTotal+sortHNTotal+displayTimeTotal);
+    cout<<"Malloc and fill took "<<mallocAndFillTotal<<"ms " << ((float)mallocAndFillTotal/(float)deno)*100<<"%" <<endl;
+    cout<<"Single Sort took " <<sortHNTotal<<"ms "<<((float)sortHNTotal/(float)deno)*100<<"%"<<endl;
+    cout<<"Display time took " <<displayTimeTotal<<"ms "<<((float)displayTimeTotal/(float)deno)*100<<"%"<<endl;
+    cout<<"For " << length << " amount of items"<<endl;
+    cout<<"Total time " <<(mallocAndFillTotal+sortHNTotal+displayTimeTotal)<<"ms"<<endl;
+    char c;
+    cin>>c;
+    free(arr);
+    return deno;
 }
 int main(){
-    bubbleSort(0xffffff);
+    uint64_t length=0xffffff;
+    int64_t bsSortTime=8;//bubbleSort(length);
+    int64_t sSortTime=singleSort(length);
+    cout<<"Single Sort took "<<sSortTime<<"ms"<<endl;
+    cout<<"Bubble Sort took " << bsSortTime <<"ms"<<endl;
+
     return 0;
 }
