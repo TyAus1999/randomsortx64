@@ -8,6 +8,55 @@
     .global fillArrayWithRandom64
     .global genRandom64
     .global missingNumber
+    .global sortHighestNumber
+
+        sortHighestNumber:#rdi pointer,rsi length
+            #rbx is preserved
+            cmp     rsi,1
+            jl      _sortHighestNumberBad
+
+            push    rbx
+            push    rbp
+            mov     rbp,rsp
+            xor     rcx,rcx #counter
+            xor     rdx,rdx #current Index of highest
+            push    rcx #-8     highest place
+            _sortHighestNumberL1:#largest number stored in rdx
+                mov     rax,[rdi+rdx*8]
+                cmp     rax,[rdi+rcx*8]
+                jg      _sortHighestNumberL1Greater
+                inc     rcx
+                cmp     rcx,rsi
+                jge     _sortHighestNumberL1Iterate
+                jmp     _sortHighestNumberL1
+                _sortHighestNumberL1Greater:
+                    mov     rdx,rcx
+                    jmp     _sortHighestNumberL1
+                _sortHighestNumberL1Iterate:
+                    #save largest value
+                    mov     rax,[rdi+rdx*8]
+                    #rax swap with [rbp-8]
+                    push    rdx
+                    mov     rdx,[rbp-8]
+                    mov     rbx,[rdi+rdx*8]
+                    mov     [rdi+rdx*8],rax
+                    pop     rdx
+                    mov     [rdi+rdx*8],rbx
+                    incq    [rbp-8]
+
+                    #save value to replace
+                    #swap values
+                    #set rcx to highest place +1
+
+
+            mov     rsp,rbp
+            pop     rbp
+            pop     rbx
+
+            _sortHighestNumberBad:
+                mov     rax,0
+                ret
+
 
         missingNumber:#rdi is pointer,rsi is length
         #rbx is preserved
@@ -266,6 +315,11 @@
             
             xor     rcx,rcx
             mov     rdx,0xffffffffffffffff
+            mov     rax,[rdi+rcx*8]
+            cmp     rax,rdx
+            jl      _checkArray64End
+            mov     rdx,rax
+            inc     rcx
             _checkArray64L1:
                 mov     rax,[rdi+rcx*8]
                 cmp     rax,rdx

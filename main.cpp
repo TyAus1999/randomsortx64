@@ -10,6 +10,7 @@ extern "C" {//the first six parameters go into rdi, rsi, rdx, rcx, r8, and r9.
     void bubbleSort(uint64_t*array,uint64_t length);
     uint64_t* fillArrayWithRandom64(uint64_t length);
     uint64_t genRandom64(void);
+    void sortHighestNumber(uint64_t*array, uint64_t length);
 }
 int64_t getTimeNow(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now().time_since_epoch()).count();
@@ -42,13 +43,29 @@ void blah(void){
     cin>>c;
     free(arr);
 }
-int main(){
-    uint64_t l=2;
+void bubbleSort(uint64_t l){
+    int64_t mallocAndFillStart=getTimeNow();
     uint64_t* arr=fillArrayWithRandom64(l);
+    int64_t mallocAndFillTotal=getTimeNow()-mallocAndFillStart;
+    int64_t bsStart=getTimeNow();
     bubbleSort(arr,l);
+    int64_t bsTotal=getTimeNow()-bsStart;
+    int64_t displayTimeStart=getTimeNow();
     for(uint64_t i=0;i<l;i++){
-        cout<<"Value at " << i << "="<<*(arr+i)<<endl;
+        cout<<"Value at " << i << "\t="<<*(arr+i)<<endl;
     }
+    int64_t displayTimeTotal=getTimeNow()-displayTimeStart;
+    int64_t deno=(mallocAndFillTotal+bsTotal+displayTimeTotal);
+    cout<<"Malloc and fill took "<<mallocAndFillTotal<<"ms " << ((float)mallocAndFillTotal/(float)deno)*100<<"%" <<endl;
+    cout<<"Bubble Sort took " <<bsTotal<<"ms "<<((float)bsTotal/(float)deno)*100<<"%"<<endl;
+    cout<<"Display time took " <<displayTimeTotal<<"ms "<<((float)displayTimeTotal/(float)deno)*100<<"%"<<endl;
+    cout<<"For " << l << " amount of items"<<endl;
+    cout<<"Total time " <<(mallocAndFillTotal+bsTotal+displayTimeTotal)<<"ms"<<endl;
+    char c;
+    cin>>c;
     free(arr);
+}
+int main(){
+    bubbleSort(0xffffff);
     return 0;
 }
