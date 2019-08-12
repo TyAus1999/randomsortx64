@@ -9,6 +9,586 @@
     .global genRandom64
     .global missingNumber
     .global sortHighestNumber
+    .global sysCallTest
+    .global whileLoopTest
+    .global primeNumberFinder
+    .global setCursor
+    .global writeChar
+    .global pokerHand
+    .global echoTest
+    .global printfGraphicsTest
+    .global floatingPointTest
+    .global asmPI
+    .global evenOdd
+
+        evenOdd:
+            mov     rax,1
+            and     rax,rdi
+            ret
+
+        asmPI:#rdi max
+            push	rbx
+            push	rbp
+            mov	    rbp,rsp
+
+            mov     rcx,1
+            xor     rax,rax
+            cvtsi2sd xmm0,rax
+            cvtsi2sd xmm1,rax
+            xor     rbx,rbx
+            asmPIL1:
+                cmp     rcx,rdi
+                jge     asmPIEnd
+                cmp     rbx,0
+                jne     asmPIL1False
+                mov     rax,4
+                cvtsi2sd xmm1,rax
+                cvtsi2sd xmm2,rcx
+                divpd   xmm1,xmm2
+                psubq   xmm0,xmm1
+
+                mov     rbx,1
+                add     rcx,2
+                jmp     asmPIL1
+            asmPIL1False:
+                xor     rbx,rbx
+                mov     rax,4
+                cvtsi2sd xmm1,rax
+                cvtsi2sd xmm2,rcx
+                divpd   xmm1,xmm2
+                paddq   xmm0,xmm1
+                
+                add     rcx,2
+                jmp     asmPIL1
+            
+            asmPIEnd:
+
+            mov	    rsp,rbp
+            pop	    rbp
+            pop	    rbx
+            ret
+
+        floatingPointTest:
+            push	rbx
+            push	rbp
+            mov	    rbp,rsp
+
+            cvtsi2sd    xmm0,rdi
+            cvtsi2sd    xmm1,rdi
+            mulsd       xmm0,xmm1
+
+            mov	    rsp,rbp
+            pop	    rbp
+            pop	    rbx
+            ret
+
+        printfGraphicsTest:
+            push    rbx
+            push    rbp
+            mov     rbp,rsp
+
+            #screen size 50x20
+
+            mov     rax,51  #Add extra byte for 0x0a padding (New line Character)
+            mov     rbx,20
+            mul     rbx
+            push    rax     #-8 amount of allocated bytes
+
+            mov     rdi,rax
+            call    malloc@PLT
+            push    rax     #-16 graphics memory pointer
+
+            mov     rdi,16
+            call    malloc@PLT
+            push    rax
+            mov     qword ptr[rax],10
+            mov     qword ptr[rax+8],10000
+            mov     rdi,rax
+            mov     rax,35
+            mov     rsi,0
+            int     0x80
+            pop     rdi
+            call    free@PLT
+
+            #printf("%s"-addr rdi, "replace string"-addr rsi)
+            call    _printfGLClear
+
+            mov     rdi,[rbp-16]
+            call    free@PLT
+            mov     rsp,rbp
+            pop     rbp
+            pop     rbx
+            ret
+            _printfGLRefresh:   #rdi-graphics memory pointer
+                push    rbx
+                push    rbp
+                mov     rbp,rsp
+                push    rdi     #-8
+
+                mov     rdi,2
+                call    malloc@PLT
+                push    rax     #-16
+                mov     byte ptr[rax],0x25
+                mov     byte ptr[rax+1],0x73
+
+                mov     rdi,rax
+                mov     rsi,[rbp-8]
+                call    printf@PLT
+
+                mov     rsp,rbp
+                pop     rbp
+                pop     rbx  
+                ret
+            _printfGLSetCharAt: #rdi-x,rsi-y,rdx-graphics pointer,cl-Character
+                call    _printfGLGetCursor
+                mov     byte ptr[rax],cl
+                ret
+            _printfGLGetCursor: #rdi-x,rsi-y, rdx-graphics pointer, returns pointer
+                cmp     rsi,0
+                je      _printfGLGetCursor0Y
+                mov     rax,rdx
+                add     rax,rdi
+                dec     rax
+                ret
+                _printfGLGetCursor0Y:
+                push    rbx
+                mov     rax,51
+                mov     rbx,rsi
+                dec     rbx
+                mul     rbx
+                add     rax,rdi
+                mov     rbx,rdx
+                add     rbx,rax
+                mov     rax,rbx
+                pop     rbx
+                ret
+            _printfGLClear:
+                push    rbx
+                push    rbp
+                mov     rbp,rsp
+                
+                mov     rdi,30
+                call    malloc@PLT
+                push    rax     #-8
+                xor     rcx,rcx
+                _printfGLClearL1:
+                    mov     byte ptr[rax+rcx],0x0a
+                    inc     rcx
+                    cmp     rcx,30
+                    jl      _printfGLClearL1
+                
+                xor     rsi,rsi
+                mov     rdi,rax
+                xor     rax,rax
+                call    printf@PLT
+
+                mov     rdi,[rbp-8]
+                call    free@PLT
+
+                mov     rsp,rbp
+                pop     rbp
+                pop     rbx
+                ret
+
+        echoTest:
+            push    rbx
+            push    rbp
+            mov     rbp,rsp
+
+            mov     rdi,5
+            call    malloc@PLT
+            push    rax     #-8
+            mov     bl,0x21
+            mov     [rax],bl
+            mov     [rax+1],bl
+            mov     [rax+2],bl
+            mov     [rax+3],bl
+            mov     [rax+4],bl
+
+            mov     rax,1
+            mov     rbx,1
+            mov     rcx,[rbp-8]
+            mov     rdx,5
+            int     0x80
+            push    rax
+
+            mov     rdi,[rbp-8]
+            call    free@PLT
+
+            pop     rax
+            mov     rsp,rbp
+            pop     rbp
+            pop     rbx
+            ret
+
+        pokerHand:#takes in pointer of length 5 struct card
+            push    rbx
+            push    rbp
+            mov     rbp,rsp
+
+            #printf
+            #rdi takes FString
+            #rsi takes string
+
+            push    rdi     #-8
+            call    _pokerHandFStringNL
+            push    rax     #-16
+
+            mov     rdi,5
+            call    malloc@PLT
+            push    rax     #-24
+            mov     rdi,5
+            call    malloc@PLT
+            push    rax     #-32
+            mov     rcx,[rbp-8]
+            push    rdx
+            xor     rdx,rdx
+            xor     rbx,rbx
+            _pokerHandL1:
+                shl     rbx,8
+                mov     bl,[rcx+rdx]
+                add     rdx,2
+                cmp     rdx,10
+                jl      _pokerHandL1
+            pop     rdx
+            mov     rax,[rbp-24]
+            push    rbx     #-40 Card Type
+            mov     [rax],rbx
+
+            mov     rax,[rbp-32]
+            mov     rcx,[rbp-8]
+            push    rdx
+            xor     rdx,rdx
+            xor     rbx,rbx
+            inc     rdx
+            _pokerHandL2:
+                shl     rbx,8
+                mov     bl,[rcx+rdx]
+                add     rdx,2
+                cmp     rdx,11
+                jl      _pokerHandL2
+            pop     rdx
+            push    rbx     #-48 Card Suit
+            mov     [rax],rbx
+
+            
+            mov     rdi,[rbp-40]
+            mov     rsi,[rbp-48]
+            call    _pokerHandCheck3OfKind
+            cmp     rax,1
+            jne     _pokerHandFWD
+            call    _pokerHand3KindPrint
+
+            _pokerHandFWD:
+
+            mov     rdi,[rbp-16]
+            mov     rsi,[rbp-24]
+            xor     rax,rax
+            call    printf@PLT
+
+            mov     rdi,[rbp-16]
+            mov     rsi,[rbp-32]
+            xor     rax,rax
+            call    printf@PLT
+
+            mov     rdi,[rbp-24]
+            call    free@PLT
+            mov     rdi,[rbp-16]
+            call    free@PLT
+            mov     rdi,[rdi-32]
+            call    free@PLT
+
+
+            mov     rsp,rbp
+            pop     rbp
+            pop     rbx
+            ret
+            _pokerHand3KindPrint:
+                push    rbx
+                push    rbp
+                mov     rbp,rsp
+
+                call    _pokerHandTK
+                push    rax     #-8
+                call    _pokerHandFStringNL
+                push    rax     #-16
+                mov     rdi,[rbp-16]
+                mov     rsi,[rbp-8]
+                xor     rax,rax
+                call    printf@PLT
+
+                mov     rdi,[rbp-8]
+                call    free@PLT
+                mov     rdi,[rbp-16]
+                call    free@PLT
+                mov     rsp,rbp
+                pop     rbp
+                pop     rbx
+                ret
+        _pokerHandCheckHighCard:#rdi is type pointer, rsi is suit pointer, rax returns place of high card
+            push    rbx
+            push    rbp
+            mov     rbp,rsp
+
+            push    rdi     #-8
+            push    rsi     #-16
+            push    0       #-24 highest index
+            xor     rcx,rcx
+            _pokerHandCheckHighCardL1:
+                mov     al,[rdi+rcx]
+                #cmp     al,
+
+            mov     rsp,rbp
+            pop     rbp
+            pop     rbx
+            ret
+        _pokerHandCheck3OfKind:#rdi is type pointer, rsi is suit pointer, rax returns 1 if 3 of kind
+            push    rbx
+            push    rbp
+            mov     rbp,rsp
+
+            push    rdi     #-8     type pointer
+            push    rsi     #-16    suit pointer
+
+            mov     rdi,5
+            call    malloc@PLT
+            push    rax     #-24
+            mov     rax,rbp
+            sub     rax,24
+            xor     rbx,rbx
+            xor     rcx,rcx
+            xor     rdx,rdx
+            _pokerHandCheck3OfKindL1:
+                mov     rcx,rdx
+                cmp     rcx,5
+                jge     _pokerHandCheck3OfKindL1EQ5
+                mov     bl,[rax+rdx]
+                    _pokerHandCheck3OfKindL1L1:
+                        mov     bh,[rax+rcx]
+                        cmp     bl,bh
+                        je      _pokerHandCheck3OfKindL1L1EQ
+                        _pokerHandCheck3OfKindL1L1EQBack:
+                        inc     rcx
+                        cmp     rcx,5
+                        jl      _pokerHandCheck3OfKindL1L1
+                inc     rdx
+                cmp     rdx,5
+                jl      _pokerHandCheck3OfKindL1
+
+            xor     rcx,rcx
+            mov     rax,[rbp-24]
+
+            _pokerHandCheck3OfKindL2:
+                mov     bl,[rax+rcx]
+                cmp     bl,2
+                je      _pokerHandCheck3OfKindL23OfKind
+                inc     rcx
+                cmp     rcx,5
+                jl      _pokerHandCheck3OfKindL2
+            mov     rax,0
+            _pokerHandCheck3OfKindEnd:
+            mov     rsp,rbp
+            pop     rbp
+            pop     rbx
+            ret
+            _pokerHandCheck3OfKindL1L1EQ:
+                push    rax
+                push    rbx
+
+                mov     rax,[rbp-24]
+                mov     rbx,[rax+rdx]
+                inc     rbx
+                mov     [rax+rdx],rbx
+
+                pop     rbx
+                pop     rax
+                jmp     _pokerHandCheck3OfKindL1L1EQBack
+            _pokerHandCheck3OfKindL1EQ5:
+                mov     bl,[rax+rdx]
+                mov     rcx,4
+                jmp     _pokerHandCheck3OfKindL1L1
+            _pokerHandCheck3OfKindL23OfKind:
+                mov     rax,1
+                jmp     _pokerHandCheck3OfKindEnd
+        _pokerHandFStringNL:
+            mov     rdi,4
+            call    malloc@PLT
+            mov     rcx,0x0d0a7325    # %s\n
+            mov     [rax],rcx
+            ret
+        _pokerHandFStringAppend:
+            mov     rdi,2
+            call    malloc@PLT
+            mov     rcx,0x7325
+            mov     [rax],rcx
+            ret
+        _pokerHandSF:
+            mov     rdi,14
+            call    malloc@PLT  # Straight Flush
+            mov     rcx,0x676961727453
+            mov     [rax],rcx
+            mov     rcx,0x6873756c46207468
+            mov     [rax+6],rcx
+            ret
+        _pokerHandTK:
+            mov     rdi,15
+            call    malloc@PLT  # Three of a Kind
+            mov     rcx,0x666f206565726854
+            mov     [rax],rcx
+            mov     rcx,0x646e694b206120
+            mov     [rax+8],rcx
+            ret
+        _pokerHandHC:
+            mov     rdi,9
+            call    malloc@PLT  # High Card
+            mov     rcx,0x7261432068676948
+            mov     [rax],rcx
+            mov     rcx,0x64
+            mov     [rax+8],rcx
+            ret
+        _pokerHandS:
+            mov     rdi,8
+            call    malloc@PLT  # Straight
+            mov     rcx,0x7468676961727453
+            mov     [rax],rcx
+            ret
+        _pokerHandFH:
+            mov     rdi,10
+            call    malloc@PLT  # Full House
+            mov     rcx,0x756f48206c6c7546
+            mov     [rax],rcx
+            mov     rcx,0x6573
+            mov     [rax+8],rcx
+            ret
+        _pokerHandTP:
+            mov     rdi,8
+            call    malloc@PLT  # Two Pair
+            mov     rcx,0x72696150206f7754
+            mov     [rax],rcx
+            ret
+        _pokerHandFK:
+            mov     rdi,14
+            call    malloc@PLT  # Four of a Kind
+            mov     rcx,0x20666f2072756f46
+            mov     [rax],rcx
+            mov     rcx,0x646e694b2061
+            mov     [rax+8],rcx
+            ret
+        _pokerHandOP:
+            mov     rdi,8
+            call    malloc@PLT  # One Pair
+            mov     rcx,0x7269615020656e4f
+            mov     [rax],rcx
+            ret
+        _pokerHandF:
+            mov     rdi,5
+            call    malloc@PLT  # Flush
+            mov     rcx,0x6873756c46
+            mov     [rax],rcx
+            ret
+        
+        printfTest:
+            push    rbx
+            push    rbp
+            mov     rbp,rsp
+
+            mov     rdi,5
+            call    malloc@PLT
+            push    rax     #-8
+
+            mov     rbx,0x74736554#"Test" backwards
+            mov     [rax],rbx
+
+            mov     rdi,5
+            call    malloc@PLT
+            push    rax    #-16
+
+            mov     rbx,0x0d0a207325#"\n %s" backwards
+            mov     [rax],rbx
+            mov     rdi,rax
+            mov     rsi,[rbp-8]
+            xor     rax,rax
+            call    printf@PLT#dont forget to zero rax
+
+            mov     rdi,[rbp-16]
+            call    free@PLT
+            mov     rdi,[rbp-8]
+            call    free@PLT
+            
+
+            mov     rsp,rbp
+            pop     rbp
+            pop     rbx
+            ret
+
+        writeChar: #rdi is char
+            xor     rax,rax
+            mov     cl,01
+            int     0xe0
+            ret
+
+        setCursor: #rdi is x, rsi is y
+            push    rbx
+            mov     ah,2
+            mov     bh,0
+            mov     dh,0
+            mov     dl,0
+            int     0x10
+            pop     rbx
+            ret
+
+        primeNumberFinder:
+            push    rbx
+            push    rbp
+            mov     rbp,rsp
+            cmp     rdi,2
+            jle     _primeNumberFinderEndBad
+
+            push    2   #Div number [-8]
+            push    rdi #number to test [-16]
+            
+            _primeNumberFinderL1:
+            mov     rax,[rbp-16]
+            mov     rcx,[rbp-8]
+            xor     rdx,rdx
+            div     rcx
+            cmp     rdx,0
+            je      _primeNumberFinderNotPrime
+
+            mov     rax,[rbp-8]
+            inc     rax
+            cmp     rax,[rbp-16]
+            je      _primeNumberFinderFinished
+            mov     [rbp-8],rax
+            jmp     _primeNumberFinderL1
+
+             _primeNumberFinderFinished:
+                mov     rax,1
+                jmp     _primeNumberFinderEnd
+            _primeNumberFinderNotPrime:
+                mov     rax,0
+            _primeNumberFinderEnd:
+            mov     rsp,rbp
+            pop     rbp
+            pop     rbx
+            ret
+            _primeNumberFinderEndBad:
+                mov     rax,0
+                jmp     _primeNumberFinderEnd
+
+
+        whileLoopTest:
+            push    rcx
+            xor     rcx,rcx
+            _whileLoopTestL1:
+                inc     rcx
+                cmp     rcx,rdi
+                jle     _whileLoopTestL1
+            pop rcx
+            ret
+
+        sysCallTest:
+            ret
 
         sortHighestNumber:#rdi pointer,rsi length
             #rbx is preserved
@@ -20,7 +600,7 @@
             mov     rbp,rsp
             xor     rcx,rcx #counter
             xor     rdx,rdx #current Index of highest
-            pushq   rcx     #-8 index of highest in array
+            push    rcx     #-8 index of highest in array
             mov     rax,[rdi+rdx*8]
             _sortHighestNumberL1:#largest number stored in rdx
                 cmp     rax,[rdi+rcx*8]
@@ -65,21 +645,21 @@
 
 
         missingNumber:#rdi is pointer,rsi is length
-        #rbx is preserved
-        cmp     rsi,1
-        jl      _missingNumberBad
+            #rbx is preserved
+            cmp     rsi,1
+            jl      _missingNumberBad
 
-        push    rbp
-        mov     rbp,rsp
+            push    rbp
+            mov     rbp,rsp
 
 
 
-        mov     rsp,rbp
-        pop     rbp
+            mov     rsp,rbp
+            pop     rbp
 
-        _missingNumberBad:
-            mov     rax,0
-            ret
+            _missingNumberBad:
+                mov     rax,0
+                ret
 
         fillArrayWithRandom64:#rdi is length
         #returns pointer to array
